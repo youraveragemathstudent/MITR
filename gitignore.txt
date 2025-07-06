@@ -1,0 +1,9 @@
+.settings/*
+.vscode/*
+
+lib/*
+bin/*
+obj/*
+
+*.sln
+*.bat
