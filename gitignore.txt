@@ -1,9 +1,22 @@
-.settings/*
-.vscode/*
+# IDE settings (Visual Studio, VS Code, etc.)
+.settings/
+.vscode/
 
-lib/*
-bin/*
-obj/*
+# Build output folders
+bin/
+obj/
+lib/
 
+# Solution and batch/script files (optional)
 *.sln
 *.bat
+*.user
+*.suo
+
+# Temporary or cache files
+*.log
+*.tmp
+
+# OS/Editor junk
+.DS_Store
+Thumbs.db
