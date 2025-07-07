@@ -1,6 +1,7 @@
 # IDE settings (Visual Studio, VS Code, etc.)
 .settings/
 .vscode/
+.vs/
 
 # Build output folders
 bin/
