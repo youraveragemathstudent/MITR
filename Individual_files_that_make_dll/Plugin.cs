@@ -1,4 +1,4 @@
-﻿// ✅ Plugin.cs
+// Plugin.cs
 using BepInEx;
 using BepInEx.Logging;
 using UnityEngine;
@@ -13,85 +13,95 @@ namespace MITR_main
     public class Plugin : BaseUnityPlugin
     {
         internal static new ManualLogSource Logger;
-        private AssetBundle _bundle;
 
         private void Awake()
         {
             Logger = base.Logger;
             Logger.LogInfo("[MITR_Main] Plugin loaded.");
 
-            string assetBundlePath = System.IO.Path.Combine(Paths.PluginPath, "MITR", "ui_pushbutton_test_79");
-            Logger.LogInfo($"📦 Trying to load AssetBundle from: {assetBundlePath}");
-
-            if (System.IO.File.Exists(assetBundlePath))
-            {
-                _bundle = AssetBundle.LoadFromFile(assetBundlePath);
-                Logger.LogInfo("✅ AssetBundle loaded successfully.");
-            }
-            else
-            {
-                Logger.LogError($"❌ AssetBundle not found at: {assetBundlePath}");
-            }
+            // Load all prefabs once at startup
+            LoadingAssets.Load(Logger);
 
             SceneManager.sceneLoaded += OnSceneLoaded;
+        }
+
+        private void OnDestroy()
+        {
+            SceneManager.sceneLoaded -= OnSceneLoaded;
         }
 
         private void OnSceneLoaded(Scene scene, LoadSceneMode mode)
         {
             Logger.LogInfo($"🧩 Scene loaded: {scene.name}");
 
-            if (_bundle == null)
+            if (LoadingAssets.Bundle == null)
             {
                 Logger.LogError("❌ AssetBundle was null in OnSceneLoaded.");
                 return;
             }
 
-            try
-            {
-                CoroutineRunner.Run(InjectCustomUI());
-            }
-            catch (System.Exception ex)
-            {
-                Logger.LogError($"❌ Exception in CoroutineRunner.Run: {ex.Message}\n{ex.StackTrace}");
-            }
+            CoroutineRunner.Run(InjectCustomUI());
         }
 
         private IEnumerator InjectCustomUI()
         {
-            yield return new WaitForSeconds(1f);
+            // wait a frame for UI to finish building
+            yield return null;
 
-            GameObject prefab = _bundle.LoadAsset<GameObject>("ui_pushbutton_test_79");
+            var prefab = LoadingAssets.Pushbutton79;
             if (prefab == null)
             {
-                Logger.LogError("❌ Could not load prefab from AssetBundle.");
+                Logger.LogError("❌ Pushbutton79 prefab is null. Check bundle export.");
                 yield break;
             }
 
+            // Find intended parent; fallback to any active canvas
             Transform parent = Resources.FindObjectsOfTypeAll<Transform>()
                 .FirstOrDefault(t => t.name == "Difficulty Select (1)");
 
             if (parent == null)
             {
-                Logger.LogError("❌ Could not find 'Difficulty Select (1)' to parent UI.");
-                yield break;
+                var canvas = Resources.FindObjectsOfTypeAll<Canvas>()
+                    .FirstOrDefault(c => c.isActiveAndEnabled);
+                if (canvas != null)
+                {
+                    parent = canvas.transform;
+                }
+                else
+                {
+                    Logger.LogError("❌ No Canvas found.");
+                    yield break;
+                }
+
+                Logger.LogWarning("⚠️ 'Difficulty Select (1)' not found. Using fallback canvas.");
             }
 
-            GameObject uiObject = GameObject.Instantiate(prefab, parent);
-            uiObject.name = "MITR_Button";
+            var go = Instantiate(prefab);
+            go.name = "MITR_Button";
+            go.transform.SetParent(parent, worldPositionStays: false);
+            go.SetActive(true);
 
-            RectTransform rect = uiObject.GetComponent<RectTransform>();
-            if (rect != null)
+            var rt = go.GetComponent<RectTransform>();
+            if (rt != null)
             {
-                rect.localScale = Vector3.one;
-                rect.anchoredPosition = new Vector2(0, -100); // Adjust as needed
-                rect.localPosition = Vector3.zero;
-            }
-            else
-            {
-                Logger.LogWarning("⚠️ Instantiated object had no RectTransform.");
+                rt.anchorMin = new Vector2(0f, 0f);
+                rt.anchorMax = new Vector2(0f, 0f);
+                rt.pivot = new Vector2(0f, 0f);
+                rt.anchoredPosition = new Vector2(40f, 40f);
+                rt.sizeDelta = new Vector2(160f, 30f);
+                rt.localScale = Vector3.one;
             }
 
-            Logger.LogInfo("✅ Instantiated and parented UI prefab.");
+            var img = go.GetComponent<Image>();
+            if (img != null && img.sprite == null)
+            {
+                var builtin = Resources.GetBuiltinResource<Sprite>("UI/Skin/UISprite.psd");
+                img.sprite = builtin;
+                img.type = Image.Type.Sliced;
+            }
+
+            Logger.LogInfo("✅ MITR button instantiated.");
         }
     }
 }
+

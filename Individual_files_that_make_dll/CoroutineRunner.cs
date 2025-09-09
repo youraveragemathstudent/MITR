@@ -7,16 +7,16 @@ namespace MITR_main
     {
         private static CoroutineRunner _instance;
 
-        public static void Run(IEnumerator coroutine)
+        public static void Run(IEnumerator routine)
         {
             if (_instance == null)
             {
-                GameObject runner = new GameObject("MITR_CoroutineRunner");
-                Object.DontDestroyOnLoad(runner);
-                _instance = runner.AddComponent<CoroutineRunner>();
+                var go = new GameObject("MITR_CoroutineRunner");
+                Object.DontDestroyOnLoad(go);
+                _instance = go.AddComponent<CoroutineRunner>();
             }
 
-            _instance.StartCoroutine(coroutine);
+            _instance.StartCoroutine(routine);
         }
     }
 }
