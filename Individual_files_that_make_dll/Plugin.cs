@@ -48,59 +48,70 @@ namespace MITR_main
             // wait a frame for UI to finish building
             yield return null;
 
-            var prefab = LoadingAssets.Pushbutton79;
-            if (prefab == null)
+            var canvas = Resources.FindObjectsOfTypeAll<Canvas>()
+                .FirstOrDefault(c => c.isActiveAndEnabled);
+            if (canvas == null)
             {
-                Logger.LogError("❌ Pushbutton79 prefab is null. Check bundle export.");
+                Logger.LogError("❌ No active Canvas found.");
                 yield break;
             }
 
-            // Find intended parent; fallback to any active canvas
-            Transform parent = Resources.FindObjectsOfTypeAll<Transform>()
-                .FirstOrDefault(t => t.name == "Difficulty Select (1)");
-
-            if (parent == null)
+            // ----- instantiate button under Canvas/Difficulty Select (1)
+            var buttonPrefab = LoadingAssets.Pushbutton79;
+            if (buttonPrefab == null)
             {
-                var canvas = Resources.FindObjectsOfTypeAll<Canvas>()
-                    .FirstOrDefault(c => c.isActiveAndEnabled);
-                if (canvas != null)
+                Logger.LogError("❌ Pushbutton79 prefab is null. Check bundle export.");
+            }
+            else
+            {
+                Transform diffParent = canvas.transform.Find("Difficulty Select (1)");
+                if (diffParent == null)
                 {
-                    parent = canvas.transform;
-                }
-                else
-                {
-                    Logger.LogError("❌ No Canvas found.");
-                    yield break;
+                    Logger.LogWarning("⚠️ 'Difficulty Select (1)' not found. Using Canvas root.");
+                    diffParent = canvas.transform;
                 }
 
-                Logger.LogWarning("⚠️ 'Difficulty Select (1)' not found. Using fallback canvas.");
+                var button = Instantiate(buttonPrefab);
+                button.name = "MITR_Button";
+                button.transform.SetParent(diffParent, false);
+                button.SetActive(true);
+
+                var rt = button.GetComponent<RectTransform>();
+                if (rt != null)
+                {
+                    rt.anchorMin = new Vector2(0f, 0f);
+                    rt.anchorMax = new Vector2(0f, 0f);
+                    rt.pivot     = new Vector2(0f, 0f);
+                    rt.anchoredPosition = new Vector2(40f, 40f);
+                    rt.sizeDelta        = new Vector2(160f, 30f);
+                    rt.localScale       = Vector3.one;
+                }
+
+                var img = button.GetComponent<Image>();
+                if (img != null && img.sprite == null)
+                {
+                    var builtin = Resources.GetBuiltinResource<Sprite>("UI/Skin/UISprite.psd");
+                    img.sprite = builtin;
+                    img.type   = Image.Type.Sliced;
+                }
+
+                Logger.LogInfo("✅ MITR button instantiated.");
             }
 
-            var go = Instantiate(prefab);
-            go.name = "MITR_Button";
-            go.transform.SetParent(parent, worldPositionStays: false);
-            go.SetActive(true);
-
-            var rt = go.GetComponent<RectTransform>();
-            if (rt != null)
+            // ----- instantiate additional GameObject under Canvas
+            var panelPrefab = LoadingAssets.Panel1;
+            if (panelPrefab == null)
             {
-                rt.anchorMin = new Vector2(0f, 0f);
-                rt.anchorMax = new Vector2(0f, 0f);
-                rt.pivot = new Vector2(0f, 0f);
-                rt.anchoredPosition = new Vector2(40f, 40f);
-                rt.sizeDelta = new Vector2(160f, 30f);
-                rt.localScale = Vector3.one;
+                Logger.LogError("❌ Panel1 prefab is null. Check bundle export.");
+                yield break;
             }
 
-            var img = go.GetComponent<Image>();
-            if (img != null && img.sprite == null)
-            {
-                var builtin = Resources.GetBuiltinResource<Sprite>("UI/Skin/UISprite.psd");
-                img.sprite = builtin;
-                img.type = Image.Type.Sliced;
-            }
+            var panel = Instantiate(panelPrefab);
+            panel.name = "MITR_Panel";
+            panel.transform.SetParent(canvas.transform, false);
+            panel.SetActive(true);
 
-            Logger.LogInfo("✅ MITR button instantiated.");
+            Logger.LogInfo("✅ MITR panel instantiated.");
         }
     }
 }
